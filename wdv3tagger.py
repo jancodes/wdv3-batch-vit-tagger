@@ -92,12 +92,17 @@ def process_predictions_with_thresholds(preds, tag_data, character_thresh, gener
 
     return final_tags
 
-def tag_images(image_folder, character_tags_first=False, general_thresh=0.35, character_thresh=0.85, hide_rating_tags=False, remove_separator=False):
+def tag_images(image_folder, character_tags_first=False, general_thresh=0.35, character_thresh=0.85, 
+               hide_rating_tags=False, remove_separator=False, prefix_tags="", suffix_tags=""):
     os.makedirs(output_path, exist_ok=True)
     model, tag_data, target_size = load_model_and_tags(VIT_MODEL_DSV3_REPO)
     
-    # Process each image in the folder / Proses setiap gambar dalam folder
+    # Process each image in the folder
     processed_files = []
+    
+    # Clean and prepare prefix/suffix tags
+    prefix_tags = prefix_tags.strip()
+    suffix_tags = suffix_tags.strip()
     
     for image_file in os.listdir(image_folder):
         if image_file.lower().endswith(('png', 'jpg', 'jpeg', 'bmp', 'gif')):
@@ -107,10 +112,22 @@ def tag_images(image_folder, character_tags_first=False, general_thresh=0.35, ch
                 preds = model.run(None, {model.get_inputs()[0].name: processed_image})[0]
 
             final_tags = process_predictions_with_thresholds(preds, tag_data, character_thresh, general_thresh, hide_rating_tags, character_tags_first)
-            
             final_tags_str = ", ".join(final_tags)
+            
             if remove_separator:
                 final_tags_str = final_tags_str.replace("_", " ")
+            
+            # Add prefix tags if provided
+            if prefix_tags:
+                if not prefix_tags.endswith(','):
+                    prefix_tags += ','
+                final_tags_str = f"{prefix_tags} {final_tags_str}"
+            
+            # Add suffix tags if provided
+            if suffix_tags:
+                if not final_tags_str.endswith(','):
+                    final_tags_str += ','
+                final_tags_str = f"{final_tags_str} {suffix_tags}"
 
             caption_file_path = os.path.join(output_path, f"{os.path.splitext(image_file)[0]}.txt")
             with open(caption_file_path, 'w') as f:
@@ -118,7 +135,6 @@ def tag_images(image_folder, character_tags_first=False, general_thresh=0.35, ch
 
             processed_files.append(image_file)
 
-    # Return both a completion message and a newline-separated list of processed files / Mengeluarkan pesan penyelesaian
     return "Process completed. Check caption files in the 'captions' directory.", "\n".join(processed_files)
 
 iface = gr.Interface(
@@ -129,14 +145,16 @@ iface = gr.Interface(
         gr.Slider(minimum=0, maximum=1, step=0.01, value=0.35, label="General tags threshold"),
         gr.Slider(minimum=0, maximum=1, step=0.01, value=0.85, label="Character tags threshold"),
         gr.Checkbox(label="Hide rating tags"),
-        gr.Checkbox(label="Remove separator", value=False)
+        gr.Checkbox(label="Remove separator", value=False),
+        gr.Textbox(label="Prefix tags (added at the beginning)", placeholder="e.g., masterpiece, best quality"),
+        gr.Textbox(label="Suffix tags (added at the end)", placeholder="e.g., low quality, worst quality")
     ],
     outputs=[
         gr.Textbox(label="Status"),
         gr.Textbox(label="Processed Files")
     ],
     title="Image Captioning with SmilingWolf/wd-vit-tagger-v3",
-    description="This tool tags all images in the specified directory and saves the captions to .txt files. Check 'Remove separator' to replace '_' with spaces in tags."
+    description="This tool tags all images in the specified directory and saves the captions to .txt files. Check 'Remove separator' to replace '_' with spaces in tags. You can add prefix and suffix tags that will be added to all images."
 )
 
 if __name__ == "__main__":

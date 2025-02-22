@@ -25,7 +25,8 @@ Steps to run:
 4. Activate the new venv: *
   - Windows: `venv\scripts\activate`
 5. Install the requirements `pip install -r requirements.txt`
-6. Run the script `python wdv3tagger.py`
+6. Install torch requirements with `pip install -r requirements-rocm.txt` or `pip install -r requirements-cuda.txt`
+7. Run the script `python wdv3tagger.py`
 
 *) Virtual environment is optional, you can skip into step 5 if you want to run directly on main OS environtment
 
