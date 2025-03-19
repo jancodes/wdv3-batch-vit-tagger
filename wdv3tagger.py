@@ -7,7 +7,6 @@ from PIL import Image
 import huggingface_hub
 
 # Define the path to save the text files / Lokasi untuk menyimpan output tags (.txt)
-output_path = './captions/'
 
 # Specific model repository from SmilingWolf's collection / Repository Default vit tagger v3
 VIT_MODEL_DSV3_REPO = "SmilingWolf/wd-vit-tagger-v3"
@@ -94,7 +93,6 @@ def process_predictions_with_thresholds(preds, tag_data, character_thresh, gener
 
 def tag_images(image_folder, character_tags_first=False, general_thresh=0.35, character_thresh=0.85, 
                hide_rating_tags=False, remove_separator=False, prefix_tags="", suffix_tags=""):
-    os.makedirs(output_path, exist_ok=True)
     model, tag_data, target_size = load_model_and_tags(VIT_MODEL_DSV3_REPO)
     
     # Process each image in the folder
@@ -129,13 +127,13 @@ def tag_images(image_folder, character_tags_first=False, general_thresh=0.35, ch
                     final_tags_str += ','
                 final_tags_str = f"{final_tags_str} {suffix_tags}"
 
-            caption_file_path = os.path.join(output_path, f"{os.path.splitext(image_file)[0]}.txt")
+            caption_file_path = os.path.join(image_folder, f"{os.path.splitext(image_file)[0]}.txt")
             with open(caption_file_path, 'w') as f:
                 f.write(final_tags_str)
 
             processed_files.append(image_file)
 
-    return "Process completed. Check caption files in the 'captions' directory.", "\n".join(processed_files)
+    return "Process completed. Caption files saved in the same directory as images.", "\n".join(processed_files)
 
 iface = gr.Interface(
     fn=tag_images,
@@ -153,8 +151,8 @@ iface = gr.Interface(
         gr.Textbox(label="Status"),
         gr.Textbox(label="Processed Files")
     ],
-    title="Image Captioning with SmilingWolf/wd-vit-tagger-v3",
-    description="This tool tags all images in the specified directory and saves the captions to .txt files. Check 'Remove separator' to replace '_' with spaces in tags. You can add prefix and suffix tags that will be added to all images."
+  title="Image Captioning with SmilingWolf/wd-vit-tagger-v3",
+    description="This tool tags all images in the specified directory and saves the captions as .txt files in the same directory. Check 'Remove separator' to replace '_' with spaces in tags. You can add prefix and suffix tags that will be added to all images."
 )
 
 if __name__ == "__main__":
